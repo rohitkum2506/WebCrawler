@@ -6,7 +6,8 @@ require 'open-uri'
 $linkArray = []
 $agent = Mechanize.new
 $index = -1
-Data_dir = '/data'
+$keyPhrase = ARGV[0].to_s + ""
+
 
 STARTING_LINK = 'https://en.wikipedia.org/wiki/Hugh_of_Saint-Cher'
 
@@ -18,7 +19,6 @@ def includesLinktoSelf(link)
 	link.to_s.downcase.include?':'.to_s
 end
 
-
 def stripUnwantedLinksBasedOnCondition(links)
 	urlRegex = /^(https?:\/\/)?(en.wikipedia.org\/wiki\/)([a-zA-Z0-9\.\,\_\-\'\/\%])*\/?$/
 	links.delete_if{|link|  urlRegex.match(link.to_s)==nil}
@@ -26,12 +26,12 @@ def stripUnwantedLinksBasedOnCondition(links)
 	return links
 end
 
-
 def addToFIFO(links)
+	
 	$linkArray = $linkArray.concat links
+	$linkArray = $linkArray.uniq
 end
 
-#//TODO
 def retrieveFromFIFO(i)
 	$linkArray[i]
 end
@@ -52,7 +52,7 @@ def writeLinksToFile()
 	f = File.open("newlink.txt", 'w')
 	f.truncate(0)
 	serialNum = 1
-	$linkArray.each do |item|
+	$linkArray.take(1000).each do |item|
 		f.write(serialNum.to_s + ". " + item)
 		f.write("\n")
 		serialNum += 1
@@ -61,21 +61,24 @@ def writeLinksToFile()
 end
 
 def ValidatePage(link)
-	htmlPage = $agent.get STARTING_LINK
-	return htmlPage.body.include?"index"
+	htmlPage = $agent.get link
+	if $keyPhrase.length == 0
+		$keyPhrase = "index"
+	end
+	return htmlPage.body.include?$keyPhrase
 end
 
-def SupervisorCrawler(seedLink)
+def SupervisorCrawler(linkUrl)
 	$index += 1
 	agent = $agent
-	htmlPage = agent.get STARTING_LINK
+	htmlPage = agent.get linkUrl
 	
 	if ValidatePage(htmlPage) 
 		linksFromPage = extractLinks(htmlPage)
 		addToFIFO(linksFromPage)
 	end
 
-	if $linkArray.count>=1000
+	if $linkArray.count>=100
 		writeLinksToFile()
 		puts "got 1000 links.stopping the crawl and exiting."
 		exit
