@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'mechanize'
-require 'open-uri'
+require 'open_uri_redirections'
 
 
 $linkArray = []
@@ -78,7 +78,7 @@ def SupervisorCrawler(linkUrl)
 		addToFIFO(linksFromPage)
 	end
 
-	if $linkArray.count>=100
+	if $linkArray.count>=1000
 		writeLinksToFile()
 		puts "got 1000 links.stopping the crawl and exiting."
 		exit
