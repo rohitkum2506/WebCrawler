@@ -23,5 +23,7 @@ Steps to run:
    for more details please visit: 'https://rvm.io/rvm/install'.
 2. check your ruby installation by typing 'ruby -v'. It should tell you the ruby version installed. 
 3. Goto the project directory, WebCrawlerIRA01 and run 'bundle install'. This will download all the required libraries and dependencies.
-4. to run the appliation use command format: 'ruby <filename.rb> <spaceSeperatedParameters>'. for example, if you want to run IndependentCrawler.rb use 'ruby IndependentCrawler.rb index'
+4. to run the appliation use command format: 'ruby <filename.rb> <spaceSeperatedParameters>'. for example, if you want to run IndependentCrawler.rb use 'ruby IndependentCrawler.rb index'.
 5. The results will be listed in respective .txt files.
+
+NOTE: you have the flexibility to choose the keyphrase by passing the parameter at command line. If you don not pass any keyphrase, the crawler will run against the word "concordance".

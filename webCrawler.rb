@@ -16,14 +16,12 @@ def crawlWithAnemone()
 	urlRegex = /^(https?:\/\/)?(en.wikipedia.org\/wiki\/)([a-zA-Z0-9\.\,\_\-\'\/\%])*\/?$/
 	wikiLinksList = []
 	index = 1
-	f = File.open("link.txt", 'w')
+	f = File.open("webCrawler.txt", 'w')
 	f.truncate(0)
 	Anemone.crawl(starting_page, :depth_limit => 5, :obey_robots => true ) do |anemone|
 	  	anemone.focus_crawl do |page| 
-		  	puts page.depth
+		  	
 		  	page.links.delete_if{|link| urlRegex.match(link.to_s)==nil || includesMainLink(link.to_s)}
-		    puts page.links
-
 		  	page.links.each do |link|
 		  		wikiLinksList.push(link.to_s)
 		    	f.write((index).to_s+ ". "+ link.to_s)
