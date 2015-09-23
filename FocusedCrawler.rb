@@ -4,15 +4,17 @@ require 'open_uri_redirections'
 
 
 $linkArray = []
-$crawledLinksArray = []
+$validLinksArray = []
 $agent = Mechanize.new
 $index = -1
-$pageCount = 0
+$keyPhrase = ARGV[0].to_s + ""
+$validPageCount = 0
 $totalPageCount = 0
 $currentPageDepthLinkCount = 0
 $nextPageDepthLinkCount = 0
 $totalLinksCount = 0
 $pageDepth = 1
+
 
 
 
@@ -59,15 +61,26 @@ def extractLinks(page)
 end
 
 def writeLinksToFile()
-	f = File.open("IndependentCrawler.txt", 'w')
+	f = File.open("FocusedCrawler.txt", 'w')
 	f.truncate(0)
 	serialNum = 1
-	$crawledLinksArray.take(1000).each do |item|
+	proportion = $validPageCount.to_f/$totalPageCount
+	f.write("Percentage of pages retrieved by focused crawling with the text '" + $keyPhrase +"' is " + proportion.round(3).to_s + "\n" + "\n")
+	$validLinksArray.take(1000).each do |item|
 		f.write(serialNum.to_s + ". " + item)
 		f.write("\n")
 		serialNum += 1
 	end
 	f.close()
+end
+
+def ValidatePage(link)
+	$totalPageCount +=1
+	htmlPage = $agent.get link
+	if $keyPhrase.length == 0
+		$keyPhrase = "concordance"
+	end
+	return htmlPage.body.downcase.include?$keyPhrase.downcase
 end
 
 def deleteLinkFromArray(linkUrl)
@@ -79,10 +92,12 @@ def deleteLinkFromArray(linkUrl)
 	end
 end
 
-def ValidateTheCrawl()
-	if $crawledLinksArray.count >= 1000 || $pageDepth == 5
+def ValidateNumberOfLinksFound()
+	if $totalPageCount >= 1000 || $pageDepth == 5
 		writeLinksToFile()
-		puts "Got enough links. Stopping the crawl and exiting."
+		proportion = $validPageCount.to_f/$totalPageCount
+		puts "Percentage of pages retrieved by focused crawling with the text '" + $keyPhrase +"' is " + proportion.round(3).to_s + "\n" + "\n")
+		puts "Crawled 1000 unique links. exiting the crawl now. Check FocusedCrawler.txt for list of relevant urls for keyphrase :" + $keyphrase+"."
 		printTime("end")
 		exit
 	end
@@ -99,24 +114,28 @@ def supervisorCrawler(linkUrl)
 	$index += 1
 	agent = $agent
 	$totalLinksCount += 1
-
 	#Gap of 1 second between subsequent http's' requests.
 	sleep 1
 	htmlPage = agent.get linkUrl
 
-	$pageCount+=1
-	linksFromPage = extractLinks(htmlPage)
-	$nextPageDepthLinkCount += linksFromPage.count
-	addToFIFO(linksFromPage)
-	$crawledLinksArray.push(linkUrl)	
-	$crawledLinksArray = $crawledLinksArray.uniq
-
-
+	if ValidatePage(htmlPage) 
+		$validPageCount+=1
+		linksFromPage = extractLinks(htmlPage)
+		$nextPageDepthLinkCount += linksFromPage.count
+		addToFIFO(linksFromPage)
+		$validLinksArray.push(linkUrl)
+		$validLinksArray = $validLinksArray.uniq		
+	else
+		deleteLinkFromArray(linkUrl)
+		#deleted one element from the array, hence indices should be reduced by one to make sure we do not miss any link.
+		$index = $index - 1 
+	end
+	
 	if $currentPageDepthLinkCount == $totalLinksCount 
 		setPageDepthCount()
 	end
 
-	ValidateTheCrawl()
+	ValidateNumberOfLinksFound()
 	supervisorCrawler(retrieveFromFIFO($index))
 end
 

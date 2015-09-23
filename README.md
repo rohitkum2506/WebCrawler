@@ -18,12 +18,15 @@ Pre-requisities for running the application:
 
 
 Steps to run:
+NOTE1 : There are two files for focused (FocusedCrawler.rb)and simple crawling (IndependentCrawler.rb). webCrawler.rb is yet another implementation for focused crawlign using library. There is flexibility to change the keyphrase by passing the keyphrase from command line in focused crawler.rb.
+
+NOTE2 : you have the flexibility to choose the keyphrase by passing the parameter at command line. If you don not pass any keyphrase, the crawler will run against the word "concordance" fro focused crawler.
+
 1. Ruby Installation : On any bash environment run '\curl -sSL https://get.rvm.io | bash -s stable --ruby'. 
    If you want to localise the setup, run the command from the project directory only.
    for more details please visit: 'https://rvm.io/rvm/install'.
-2. check your ruby installation by typing 'ruby -v'. It should tell you the ruby version installed. 
-3. Goto the project directory, WebCrawlerIRA01 and run 'bundle install'. This will download all the required libraries and dependencies.
-4. to run the appliation use command format: 'ruby <filename.rb> <spaceSeperatedParameters>'. for example, if you want to run IndependentCrawler.rb use 'ruby IndependentCrawler.rb index'.
-5. The results will be listed in respective .txt files.
-
-NOTE: you have the flexibility to choose the keyphrase by passing the parameter at command line. If you don not pass any keyphrase, the crawler will run against the word "concordance".
+2. Check your ruby installation by typing 'ruby -v'. It should tell you the ruby version installed. 
+3. Do 'gem install bundler'.
+4. Goto the project directory, WebCrawlerIRA01 and run 'bundle install'. This will download all the required libraries and dependencies.
+5. To run the application use command format: 'ruby <filename.rb> <spaceSeperatedParameters>'. for example, if you want to run IndependentCrawler.rb use 'ruby IndependentCrawler.rb index'. You do not need any parameter for IndependentCrawler.rb and WebCrawler.rb.
+6. The results will be listed in respective .txt files.
