@@ -2,11 +2,11 @@ require 'rubygems'
 require 'mechanize'
 require 'open_uri_redirections'
 
-
+#Constant section begins#
 $linkArray = []
 $validLinksArray = []
 $agent = Mechanize.new
-
+$index = -1
 $keyPhrase = ARGV[0].to_s + ""
 $validPageCount = 0
 $totalPageCount = 0
@@ -14,17 +14,19 @@ $currentPageDepthLinkCount = 0
 $nextPageDepthLinkCount = 0
 $totalLinksCount = 0
 $pageDepth = 1
+#Constant section ends#
 
 
-
-
-STARTING_LINK = 'https://en.wikipedia.org/wiki/Hugh_of_Saint-Cher'
+SEED_LINK = 'https://en.wikipedia.org/wiki/Hugh_of_Saint-Cher'
 
 #This definition takes care of removing urls which contain 'main_page.'
 def includesMainPageLink(link)
 	link.to_s.downcase.include?"main_page"
 end
 
+def includesLinktoSelf(link)
+	link.to_s.downcase.include?':'.to_s
+end
 
 def stripUnwantedLinksBasedOnCondition(links)
 	#Regex takes care of avoiding links that :
@@ -85,8 +87,17 @@ def ValidatePage(link)
 	return htmlPage.body.downcase.include?$keyPhrase.downcase
 end
 
+def deleteLinkFromArray(linkUrl)
+	$linkArray = $linkArray - [linkUrl]
+	if $linkArray.empty?
+		puts "Sorry, there are no more links to crawl. Please change the seed and try again."
+		printTime("end")
+		exit
+	end
+end
+
 def ValidateNumberOfLinksFound()
-	if ($validPageCount >= 1000) || ($pageDepth == 5)
+	if $totalPageCount >= 1000 || $pageDepth == 5
 		writeLinksToFile()
 		proportion = $validPageCount.to_f/$totalPageCount
 		puts "Percentage of pages retrieved by focused crawling with the text '" + $keyPhrase +"' is " + proportion.round(3).to_s + "\n" + "\n"
@@ -99,19 +110,11 @@ def setPageDepthCount
 	$pageDepth+=1
 	$currentPageDepthLinkCount += $nextPageDepthLinkCount
 	$nextPageDepthLinkCount = 0
-	puts "Page depth : " + $pageDepth.to_s
-end
-
-def doCrawl
-	index = 0
-	while index<=$linkArray.count
-		supervisorCrawler($linkArray[index])
-		index += 1
-	end
+	puts "Page depth " + $pageDepth.to_s + " reached."
 end
 
 def supervisorCrawler(linkUrl)
-	
+	$index += 1
 	agent = $agent
 	$totalLinksCount += 1
 	#Gap of 1 second between subsequent http's' requests.
@@ -123,10 +126,13 @@ def supervisorCrawler(linkUrl)
 		linksFromPage = extractLinks(htmlPage)
 		$nextPageDepthLinkCount += linksFromPage.count
 		addToFIFO(linksFromPage)
-		# $linkArray = $linkArray - [linkUrl]
 		$validLinksArray.push(linkUrl)
-		$validLinksArray = $validLinksArray.uniq		
-		# puts "valid pages : " + $validPageCount.to_s + "     Total links count : "+ $totalLinksCount.to_s+ "      currentPageDepthLinkCount : "+ $currentPageDepthLinkCount.to_s +   "    Link array Size : " + $linkArray.count.to_s 
+		$validLinksArray = $validLinksArray.uniq
+		# puts "valid pages : " + $validPageCount.to_s + "     Total links count : "+ $totalLinksCount.to_s+ "      currentPageDepthLinkCount : "+ $currentPageDepthLinkCount.to_s +   "    Link array Size : " + $linkArray.count.to_s 		
+	else
+		deleteLinkFromArray(linkUrl)
+		#deleted one element from the array, hence indices should be reduced by one to make sure we do not miss any link.
+		$index = $index - 1 
 	end
 	
 	if $currentPageDepthLinkCount == $totalLinksCount 
@@ -134,14 +140,14 @@ def supervisorCrawler(linkUrl)
 	end
 
 	ValidateNumberOfLinksFound()
-	
+	supervisorCrawler(retrieveFromFIFO($index))
 end
 
 def startCrawl()
 	printTime("start")	
-	addToFIFO([STARTING_LINK])
+	addToFIFO([SEED_LINK])
 	$currentPageDepthLinkCount +=1
-	doCrawl()
+	supervisorCrawler(retrieveFromFIFO(0))
 end
 
 startCrawl()
